@@ -17,7 +17,7 @@ subset = []
 
 # Extract 30 samples per class
 for features, label in zip(X, y):
-    if class_counts[label] < 30:
+    if class_counts[label] < 300:
         subset.append((torch.tensor(features), torch.tensor(label)))
         class_counts[label] += 1
     if all(count == 30 for count in class_counts.values()):
