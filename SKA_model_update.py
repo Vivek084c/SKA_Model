@@ -169,7 +169,7 @@ labels = torch.tensor([item[1] for item in mnist_subset])
 
 # Prepare the dataset (single batch for SKA forward learning)
 inputs = images  # No mini-batches, full dataset used for forward-only updates
-    
+
 # Training parameters
 model = SKAModel()
 learning_rate = 0.01
@@ -182,51 +182,56 @@ start_time = time.time()
 # Initialize tensors for first step
 model.initialize_tensors(inputs.size(0))
 
-# Process K forward steps (without backpropagation)
-for k in range(model.K):
-    outputs = model.forward(inputs)
-    # Store mean output distribution for the final layer
-    model.output_history.append(outputs.mean(dim=0).detach().cpu().numpy())  # [10] vector
-    if k > 0:  # Compute entropy after first step
-        batch_entropy = model.calculate_entropy()
-        model.ska_update(inputs, learning_rate)
-        total_entropy += batch_entropy
-        step_count += 1
-        print(f'Step: {k}, Total Steps: {step_count}, Entropy: {batch_entropy:.4f}')
-        model.visualize_entropy_heatmap(step_count)
-        model.visualize_cosine_heatmap(step_count)  # Add cosine heatmap
-    # Update previous decision tensors
-    model.D_prev = [d.clone().detach() if d is not None else None for d in model.D]
+print(type(inputs))
+print(inputs.shape)
 
 
-# Final statistics
-total_time = time.time() - start_time
-avg_entropy = total_entropy / step_count if step_count > 0 else 0
-print(f"Training Complete: Avg Entropy={avg_entropy:.4f}, Steps={step_count}, Time={total_time:.2f}s")
 
-# Plot entropy history across layers
-plt.figure(figsize=(8, 6))
-plt.plot(np.array(model.entropy_history).T)  # Transpose for layer-wise visualization
-plt.title('Entropy Evolution Across Layers (Single Pass)')
-plt.xlabel('Step Index K')
-plt.ylabel('Entropy')
-plt.legend([f"Layer {i+1}" for i in range(len(model.layer_sizes))])
-plt.grid(True)
-plt.savefig("entropy_history_single_pass.png")
-plt.show()
+# # Process K forward steps (without backpropagation)
+# for k in range(model.K):
+#     outputs = model.forward(inputs)
+#     # Store mean output distribution for the final layer
+#     model.output_history.append(outputs.mean(dim=0).detach().cpu().numpy())  # [10] vector
+#     if k > 0:  # Compute entropy after first step
+#         batch_entropy = model.calculate_entropy()
+#         model.ska_update(inputs, learning_rate)
+#         total_entropy += batch_entropy
+#         step_count += 1
+#         print(f'Step: {k}, Total Steps: {step_count}, Entropy: {batch_entropy:.4f}')
+#         model.visualize_entropy_heatmap(step_count)
+#         model.visualize_cosine_heatmap(step_count)  # Add cosine heatmap
+#     # Update previous decision tensors
+#     model.D_prev = [d.clone().detach() if d is not None else None for d in model.D]
 
-# Plot cosine history across layers (single pass)
-plt.figure(figsize=(8, 6))
-plt.plot(np.array(model.cosine_history).T)  # Transpose for layer-wise visualization
-plt.title('Cos(\u03B8) Alignment Evolution Across Layers (Single Pass)')
-plt.xlabel('Step Index K')
-plt.ylabel('Cos(\u03B8)')
-plt.legend([f"Layer {i+1}" for i in range(len(model.layer_sizes))])
-plt.grid(True)
-plt.savefig("cosine_history_single_pass.png")
-plt.show()
 
-# Plot output distribution history
-model.visualize_output_distribution()
+# # Final statistics
+# total_time = time.time() - start_time
+# avg_entropy = total_entropy / step_count if step_count > 0 else 0
+# print(f"Training Complete: Avg Entropy={avg_entropy:.4f}, Steps={step_count}, Time={total_time:.2f}s")
 
-print("Training complete. Visualizations generated.")
+# # Plot entropy history across layers
+# plt.figure(figsize=(8, 6))
+# plt.plot(np.array(model.entropy_history).T)  # Transpose for layer-wise visualization
+# plt.title('Entropy Evolution Across Layers (Single Pass)')
+# plt.xlabel('Step Index K')
+# plt.ylabel('Entropy')
+# plt.legend([f"Layer {i+1}" for i in range(len(model.layer_sizes))])
+# plt.grid(True)
+# plt.savefig("entropy_history_single_pass.png")
+# plt.show()
+
+# # Plot cosine history across layers (single pass)
+# plt.figure(figsize=(8, 6))
+# plt.plot(np.array(model.cosine_history).T)  # Transpose for layer-wise visualization
+# plt.title('Cos(\u03B8) Alignment Evolution Across Layers (Single Pass)')
+# plt.xlabel('Step Index K')
+# plt.ylabel('Cos(\u03B8)')
+# plt.legend([f"Layer {i+1}" for i in range(len(model.layer_sizes))])
+# plt.grid(True)
+# plt.savefig("cosine_history_single_pass.png")
+# plt.show()
+
+# # Plot output distribution history
+# model.visualize_output_distribution()
+
+# print("Training complete. Visualizations generated.")
