@@ -12,7 +12,7 @@ import time
 
 # Define the SKA model with 4 layers
 class SKAModel(nn.Module):
-    def __init__(self, input_size=784, layer_sizes=[256, 128, 64, 10], K=50):
+    def __init__(self, input_size=4, layer_sizes=[16, 8, 6, 3], K=50):
         super(SKAModel, self).__init__()
         self.input_size = input_size
         self.layer_sizes = layer_sizes
@@ -38,12 +38,12 @@ class SKAModel(nn.Module):
         self.entropy_history = [[] for _ in range(len(layer_sizes))]
         self.cosine_history = [[] for _ in range(len(layer_sizes))]
         self.output_history = []  # New: Store mean output distribution (10 classes) per step
-
     
+
     def forward(self, x):
         """Computes SKA forward pass, storing knowledge and decisions."""
         batch_size = x.shape[0]
-        x = x.view(batch_size, -1)  # Flatten images
+        #x = x.view(batch_size, -1)  # Flatten images --> dont need to perform this, we already have a 1d tensor
 
         for l in range(len(self.layer_sizes)):
             # Compute knowledge tensor Z = Wx + b
@@ -54,10 +54,10 @@ class SKAModel(nn.Module):
             self.Z[l] = z
             self.D[l] = d
             x = d  # Output becomes input for the next layer
-            
 
         return x
     
+
     def calculate_entropy(self):
         """Computes entropy reduction and cos(theta) per layer."""
         total_entropy = 0
@@ -82,7 +82,7 @@ class SKAModel(nn.Module):
 
                 total_entropy += layer_entropy
         return total_entropy
-
+    
 
     def ska_update(self, inputs, learning_rate=0.01):
         """Updates weights using entropy-based learning without backpropagation."""
@@ -111,7 +111,7 @@ class SKAModel(nn.Module):
             self.entropy_history[l] = []  # Reset entropy history
             self.cosine_history[l] = []   # Reset cosine history
         self.output_history = []  # Reset output history
-
+        
 
     def visualize_entropy_heatmap(self, step):
         """Dynamically scales the heatmap range and visualizes entropy reduction."""
@@ -126,7 +126,7 @@ class SKAModel(nn.Module):
         plt.xlabel("Step Index K")
         plt.ylabel("Network Layers")
         plt.tight_layout()
-        plt.savefig(f"entropy_heatmap_step_{step}.png")
+        plt.savefig(f"output/entropy_heatmap_step_{step}.png")
         plt.show(block=False)  # Non-blocking
         plt.pause(2)  # Wait for 2 seconds
         plt.close()  # Close automatically
@@ -142,7 +142,7 @@ class SKAModel(nn.Module):
         plt.xlabel("Step Index K")
         plt.ylabel("Network Layers")
         plt.tight_layout()
-        plt.savefig(f"cosine_heatmap_step_{step}.png")
+        plt.savefig(f"output/cosine_heatmap_step_{step}.png")
         plt.show(block=False)  # Non-blocking
         plt.pause(2)  # Wait for 2 seconds
         plt.close()  # Close automatically
@@ -158,20 +158,17 @@ class SKAModel(nn.Module):
         plt.legend([f"Class {i}" for i in range(10)], loc='upper right', bbox_to_anchor=(1.15, 1))
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig("output_distribution_single_pass.png")
+        plt.savefig("output/output_distribution_single_pass.png")
         plt.show(block=False)  # Non-blocking
         plt.pause(2)  # Wait for 2 seconds
         plt.close()  # Close automatically
-
-
-
+    
 # Load the pre-saved MNIST subset (100 samples per class)
-mnist_subset = torch.load("mnist_subset_100_per_class.pt")
-images = torch.stack([item[0] for item in mnist_subset])  # Shape: [1000, 1, 28, 28]
+mnist_subset = torch.load("iris_subset_30_per_class.pt")
+images = torch.stack([item[0] for item in mnist_subset])  
 labels = torch.tensor([item[1] for item in mnist_subset])
 
-# Prepare the dataset (single batch for SKA forward learning)
-inputs = images  # No mini-batches, full dataset used for forward-only updates
+inputs = images
 
 # Training parameters
 model = SKAModel()
@@ -196,12 +193,10 @@ for k in range(model.K):
         total_entropy += batch_entropy
         step_count += 1
         print(f'Step: {k}, Total Steps: {step_count}, Entropy: {batch_entropy:.4f}')
-        # model.visualize_entropy_heatmap(step_count)
-        # model.visualize_cosine_heatmap(step_count)  # Add cosine heatmap
+        model.visualize_entropy_heatmap(step_count)
+        model.visualize_cosine_heatmap(step_count)  # Add cosine heatmap
     # Update previous decision tensors
     model.D_prev = [d.clone().detach() if d is not None else None for d in model.D]
-
-
 
 # Final statistics
 total_time = time.time() - start_time
