@@ -110,14 +110,8 @@ pip install -r requirements.txt
 - Optimized code for Iris dataset classification
 - Model training and evaluation procedures
 
-## License
 
-[Add your license information here]
-
-## Contributing
-
-[Add contribution guidelines if applicable]
 
 ## Contact
 
-[Add your contact information here]
+email : vivek.choudhry084@gmail.com
